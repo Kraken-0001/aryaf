@@ -1,0 +1,1084 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2f6b3c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="أرياف">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>أرياف</title>
+<style>
+  /* Layout: logo + green title, sticky pill tabs on top, then cards. Summary uses label/value rows like a ledger. */
+  :root {
+    --bg: #f3f4f8; --surface: #ffffff; --fg: #1d2030; --muted: #666b80; --line: #e2e4ec;
+    --brand: #714b67; --brand-fg: #ffffff; --soft: #f1ecf0; --hero: #714b67; --accent: #714b67;
+    --good: #1a8a5a; --bad: #d23b3b; --earth: #017e84; --gold: #f0a030; --blue: #2f6fd6; --t-green: #e3f5ec; --t-blue: #e4edfc; --t-orange: #fdf0dc; --t-red: #fbe7e7; --warnbg: #fbefd2; --warnfg: #7a4d00;
+    --font: "Segoe UI", Tahoma, "Noto Naskh Arabic", "Noto Sans Arabic", system-ui, -apple-system, Arial, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15161d; --surface: #1e202a; --fg: #eceef6; --muted: #a2a6ba; --line: #323546;
+      --brand: #9a6a8c; --brand-fg: #ffffff; --soft: #2a2733; --hero: #5d3d55; --accent: #d9a8cb;
+      --good: #4fd09a; --bad: #f58a8a; --earth: #3fb7bd; --gold: #f2b552; --blue: #7aa6f2; --t-green: #163a2b; --t-blue: #1a2b4d; --t-orange: #44321a; --t-red: #482224; --warnbg: #3a2f12; --warnfg: #f1cf84; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15161d; --surface: #1e202a; --fg: #eceef6; --muted: #a2a6ba; --line: #323546;
+    --brand: #9a6a8c; --brand-fg: #ffffff; --soft: #2a2733; --hero: #5d3d55; --accent: #d9a8cb;
+    --good: #4fd09a; --bad: #f58a8a; --earth: #3fb7bd; --gold: #f2b552; --blue: #7aa6f2; --t-green: #163a2b; --t-blue: #1a2b4d; --t-orange: #44321a; --t-red: #482224; --warnbg: #3a2f12; --warnfg: #f1cf84; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 17px; line-height: 1.5;
+    padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+  [hidden] { display: none !important; }
+  button, input { font: inherit; color: inherit; }
+
+  .brand { max-width: 640px; margin: 0 auto; padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 6px; display: flex; align-items: center; gap: 12px; }
+  .brand svg { width: 52px; height: 52px; flex: none; border-radius: 14px; }
+  .brand h1 { margin: 0; font-size: 34px; line-height: 1.25; font-weight: 800; color: var(--accent); }
+  .brand p { margin: 0; font-size: 14px; color: var(--muted); }
+
+  .tabs-wrap { display: none; }
+  body:not([data-sec="home"]) .brand { display: none; }
+  body[data-sec="home"] { --brand: #714b67; --accent: #714b67; }
+  body[data-sec="stock"] { --brand: #2f6fd6; --accent: #2f6fd6; }
+  body[data-sec="assets"] { --brand: #1a8a5a; --accent: #1a8a5a; }
+  body[data-sec="expenses"] { --brand: #d23b3b; --accent: #d23b3b; }
+  body[data-sec="summary"] { --brand: #714b67; --accent: #714b67; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) body[data-sec="stock"] { --accent: #7aa6f2; }
+    :root:not([data-theme="light"]) body[data-sec="assets"] { --accent: #4fd09a; }
+    :root:not([data-theme="light"]) body[data-sec="expenses"] { --accent: #f58a8a; }
+    :root:not([data-theme="light"]) body[data-sec="summary"], :root:not([data-theme="light"]) body[data-sec="home"] { --accent: #d9a8cb; }
+  }
+  :root[data-theme="dark"] body[data-sec="stock"] { --accent: #7aa6f2; }
+  :root[data-theme="dark"] body[data-sec="assets"] { --accent: #4fd09a; }
+  :root[data-theme="dark"] body[data-sec="expenses"] { --accent: #f58a8a; }
+  :root[data-theme="dark"] body[data-sec="summary"], :root[data-theme="dark"] body[data-sec="home"] { --accent: #d9a8cb; }
+  .secbar { position: sticky; top: calc(8px + env(safe-area-inset-top, 0px)); z-index: 5; margin-top: env(safe-area-inset-top, 0px); display: flex; align-items: center; gap: 12px; background: var(--brand); color: #fff; border-radius: 18px; padding: 8px 10px; }
+  .secbar h2 { margin: 0; font-size: 22px; color: #fff; }
+  .secbar button { min-height: 44px; padding: 0 14px; border-radius: 12px; border: 0; background: rgba(255,255,255,.22); color: #fff; font-weight: 700; font-size: 16px; cursor: pointer; }
+  .homegrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 6px; }
+  .hometile { min-height: 168px; border-radius: 24px; border: 0; padding: 16px; display: grid; align-content: space-between; justify-items: start; text-align: start; color: #fff; cursor: pointer; background: var(--tc); min-width: 0; }
+  .hometile[data-sec="stock"] { --tc: #2f6fd6; } .hometile[data-sec="assets"] { --tc: #1a8a5a; }
+  .hometile[data-sec="expenses"] { --tc: #d23b3b; } .hometile[data-sec="summary"] { --tc: #714b67; }
+  .hometile .ic svg { width: 40px; height: 40px; stroke: #fff; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .hometile b { font-size: 24px; line-height: 1.2; } .hometile .tv { font-size: 15px; opacity: .95; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  body[data-sec="sales"] { --brand: #e07b12; --accent: #c4620a; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body[data-sec="sales"] { --accent: #f2b552; } }
+  :root[data-theme="dark"] body[data-sec="sales"] { --accent: #f2b552; }
+  .hometile[data-sec="sales"] { --tc: #e07b12; }
+  .hometile[data-sec="mats"] { --tc: #017e84; }
+  body[data-sec="mats"] { --brand: #017e84; --accent: #017e84; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body[data-sec="mats"] { --accent: #3fb7bd; } }
+  :root[data-theme="dark"] body[data-sec="mats"] { --accent: #3fb7bd; }
+  .cashrow { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
+  .cashrow input { width: 110px; text-align: center; }
+  .cashbox { min-width: 0; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .seg button { min-height: 48px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; font-size: 16px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--brand); color: #fff; border-color: transparent; }
+  .en { direction: ltr; unicode-bidi: isolate; display: inline-block; letter-spacing: .04em; font-weight: 600; }
+  .mini { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: end; }
+  select { width: 100%; min-height: 52px; padding: 8px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg); font-size: 17px; }
+  .sale .line { border-bottom: 0; padding-bottom: 0; } .sale { border-bottom: 1px solid var(--line); padding-bottom: 10px; } .sale:last-child { border-bottom: 0; }
+  .warnbk { border: 1.5px solid #c62f2f; }
+  .warnbk b { color: #c62f2f; }
+  details.faq { border-top: 1px solid var(--line, #e3e8e1); padding: 10px 0; }
+  details.faq summary { font-weight: 700; cursor: pointer; }
+  details.faq p { margin-top: 6px; }
+  .note.center { text-align: center; margin-top: 14px; }
+  .tabs-wrap-old { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 8px 0; }
+  nav.tabs { max-width: 640px; margin: 0 auto; padding: 0 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  nav.tabs button { min-height: 52px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font-weight: 600; font-size: 16px; cursor: pointer; padding: 0 4px; }
+  nav.tabs button[aria-current="page"] { background: var(--brand); color: var(--brand-fg); border-color: transparent; }
+
+  main { max-width: 640px; margin: 0 auto; padding: 6px 16px calc(32px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px; }
+  h2 { margin: 0; font-size: 20px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0; }
+  .note { font-size: 14px; color: var(--muted); margin: 0; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: grid; gap: 12px; min-width: 0; }
+  .hero { background: var(--hero); border-color: transparent; text-align: center; padding: 22px 14px; gap: 4px; }
+  .hero .lbl { font-size: 16px; }
+  .hero .big { font-size: 44px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+  .line { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+  .line:last-child { border-bottom: 0; padding-bottom: 0; }
+  .line > span:first-child { min-width: 0; }
+  .line .val { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 18px; }
+  .val.good { color: var(--good); } .val.bad { color: var(--bad); }
+  .line input[type="text"] { width: 150px; text-align: center; }
+  .line small { display: block; color: var(--muted); font-size: 13px; }
+
+  input[type="text"] { width: 100%; min-width: 0; min-height: 52px; padding: 8px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg); font-size: 17px; font-variant-numeric: tabular-nums; }
+  input::placeholder { color: var(--muted); opacity: .75; }
+  input:focus-visible, button:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+  .field { display: grid; gap: 5px; min-width: 0; }
+  .field > label { font-size: 14px; color: var(--muted); font-weight: 600; }
+  .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .addrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stepper { display: grid; grid-template-columns: 56px 1fr 56px; gap: 8px; }
+  .stepper input { text-align: center; font-size: 22px; font-weight: 700; }
+  .step { min-height: 52px; border-radius: 14px; border: 1px solid var(--line); background: var(--soft); font-size: 28px; font-weight: 700; cursor: pointer; line-height: 1; }
+  .btn { min-height: 52px; padding: 0 22px; border-radius: 14px; border: 0; background: var(--brand); color: var(--brand-fg); font-weight: 700; font-size: 17px; cursor: pointer; }
+  .btn.alt { background: var(--soft); color: var(--fg); border: 1px solid var(--line); }
+  .btn.danger { background: var(--bad); color: var(--bg); }
+  .btn.sm { min-height: 44px; font-size: 15px; padding: 0 14px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { min-height: 42px; padding: 0 14px; border-radius: 999px; border: 1px dashed var(--accent); background: transparent; color: var(--accent); font-weight: 600; cursor: pointer; }
+
+  .badge { display: inline-flex; padding: 6px 12px; border-radius: 999px; background: var(--soft); font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .badge.good { color: var(--good); } .badge.bad { color: var(--bad); }
+  .meta { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .meta small { color: var(--muted); font-size: 14px; }
+  .del-row { display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+  .del-row .ask { margin-inline-end: auto; color: var(--muted); font-size: 15px; }
+  .empty { text-align: center; color: var(--muted); padding: 18px 8px; }
+  .warn { border: 1px solid var(--bad); border-radius: 12px; padding: 10px 12px; color: var(--bad); font-size: 15px; }
+  .rowitem { display: grid; grid-template-columns: 1fr 130px; gap: 8px; }
+  .rowitem + .del-row { margin-top: -2px; }
+
+  .split { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: var(--line); margin-top: 10px; }
+  .split i { display: block; height: 100%; }
+  .legend { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-inline-end: 5px; background: var(--c); }
+  .badge.low { background: var(--warnbg); color: var(--warnfg); }
+  .lowline { background: var(--warnbg); color: var(--warnfg); border-radius: 12px; padding: 10px 12px; font-weight: 600; font-size: 15px; }
+  .jar { display: block; margin: 0 auto 6px; width: 64px; height: 64px; }
+  .tag { color: var(--earth) !important; font-weight: 600; }
+  .hero { border: 0; color: #fff; background: var(--brand); }
+  .hero .lbl { color: rgba(255,255,255,.85); }
+  .hero .big { color: #fff; }
+  .hero .split { background: rgba(255,255,255,.22); }
+  .hero .legend { color: rgba(255,255,255,.9); }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tile { border-radius: 16px; padding: 12px; display: grid; gap: 2px; min-width: 0; }
+  .tile small { font-size: 13px; color: var(--muted); }
+  .tile b { font-size: 22px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .tile.g { background: var(--t-green); } .tile.g b { color: var(--good); }
+  .tile.b { background: var(--t-blue); } .tile.b b { color: var(--blue); }
+  .tile.o { background: var(--t-orange); } .tile.o b { color: var(--warnfg); }
+  .tile.r { background: var(--t-red); } .tile.r b { color: var(--bad); }
+  .verdict { border-radius: 18px; padding: 16px; display: grid; gap: 4px; }
+  .verdict b { font-size: 20px; } .verdict span { font-size: 15px; }
+  .verdict.win { background: var(--t-green); color: var(--good); }
+  .verdict.lose { background: var(--t-red); color: var(--bad); }
+  .verdict.info { background: var(--t-blue); color: var(--blue); }
+  .verdict.neutral { background: var(--soft); color: var(--muted); }
+  .badge.loss { background: var(--t-red); color: var(--bad); }
+  footer { text-align: center; color: var(--muted); font-size: 14px; padding: 10px 0 0; }
+  footer b { color: var(--accent); }
+  .toast { position: fixed; z-index: 9; inset-inline: 0; margin: 0 auto; width: max-content; max-width: calc(100% - 32px); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); padding: 10px 18px; border-radius: 999px; font-weight: 600; font-size: 15px; }
+
+  /* ---- Aryaf natural theme ---- */
+  :root { --bg: #f5f0e3; --surface: #fffcf4; --fg: #2b2a1f; --muted: #756e5a; --line: #e4dcc6; --brand: #3d5a3a; --soft: #efe8d3; --hero: #3d5a3a; --accent: #3d5a3a; --good: #3f7a3a; --bad: #b5533c; --earth: #8a5a3a; --gold: #c9a24a; --warnbg: #f8ecc9; --warnfg: #7a5a10; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #181610; --surface: #23201a; --fg: #efe9d6; --muted: #aaa38c; --line: #3a3628; --brand: #5f8458; --soft: #2d2a20; --accent: #a9c892; --good: #8fcb82; --bad: #e58a72; --earth: #d1a07c; --gold: #e0bd62; --warnbg: #3a3012; --warnfg: #f1cf84; } }
+  :root[data-theme="dark"] { --bg: #181610; --surface: #23201a; --fg: #efe9d6; --muted: #aaa38c; --line: #3a3628; --brand: #5f8458; --soft: #2d2a20; --accent: #a9c892; --good: #8fcb82; --bad: #e58a72; --earth: #d1a07c; --gold: #e0bd62; --warnbg: #3a3012; --warnfg: #f1cf84; }
+  body[data-sec="home"], body[data-sec="summary"] { --brand: #3d5a3a; --accent: #3d5a3a; }
+  body[data-sec="stock"] { --brand: #5f7d3c; --accent: #5f7d3c; }
+  body[data-sec="sales"] { --brand: #a8741f; --accent: #a8741f; }
+  body[data-sec="mats"] { --brand: #3f7a6b; --accent: #3f7a6b; }
+  body[data-sec="assets"] { --brand: #8a5a3a; --accent: #8a5a3a; }
+  body[data-sec="expenses"] { --brand: #b5533c; --accent: #b5533c; }
+  .hometile[data-sec="summary"] { --tc: #3d5a3a; } .hometile[data-sec="stock"] { --tc: #5f7d3c; } .hometile[data-sec="sales"] { --tc: #a8741f; }
+  .hometile[data-sec="mats"] { --tc: #3f7a6b; } .hometile[data-sec="assets"] { --tc: #8a5a3a; } .hometile[data-sec="expenses"] { --tc: #b5533c; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) body[data-sec="home"], :root:not([data-theme="light"]) body[data-sec="summary"] { --accent: #a9c892; }
+    :root:not([data-theme="light"]) body[data-sec="stock"] { --accent: #a9c892; } :root:not([data-theme="light"]) body[data-sec="sales"] { --accent: #e2b055; }
+    :root:not([data-theme="light"]) body[data-sec="mats"] { --accent: #7cc0ae; } :root:not([data-theme="light"]) body[data-sec="assets"] { --accent: #d1a07c; }
+    :root:not([data-theme="light"]) body[data-sec="expenses"] { --accent: #e58a72; }
+    :root:not([data-theme="light"]) .hometile[data-sec="summary"] { --tc: #a9c892; } :root:not([data-theme="light"]) .hometile[data-sec="stock"] { --tc: #a9c892; }
+    :root:not([data-theme="light"]) .hometile[data-sec="sales"] { --tc: #e2b055; } :root:not([data-theme="light"]) .hometile[data-sec="mats"] { --tc: #7cc0ae; }
+    :root:not([data-theme="light"]) .hometile[data-sec="assets"] { --tc: #d1a07c; } :root:not([data-theme="light"]) .hometile[data-sec="expenses"] { --tc: #e58a72; }
+  }
+  :root[data-theme="dark"] body[data-sec="home"], :root[data-theme="dark"] body[data-sec="summary"], :root[data-theme="dark"] body[data-sec="stock"] { --accent: #a9c892; }
+  :root[data-theme="dark"] body[data-sec="sales"] { --accent: #e2b055; } :root[data-theme="dark"] body[data-sec="mats"] { --accent: #7cc0ae; }
+  :root[data-theme="dark"] body[data-sec="assets"] { --accent: #d1a07c; } :root[data-theme="dark"] body[data-sec="expenses"] { --accent: #e58a72; }
+  :root[data-theme="dark"] .hometile[data-sec="summary"], :root[data-theme="dark"] .hometile[data-sec="stock"] { --tc: #a9c892; }
+  :root[data-theme="dark"] .hometile[data-sec="sales"] { --tc: #e2b055; } :root[data-theme="dark"] .hometile[data-sec="mats"] { --tc: #7cc0ae; }
+  :root[data-theme="dark"] .hometile[data-sec="assets"] { --tc: #d1a07c; } :root[data-theme="dark"] .hometile[data-sec="expenses"] { --tc: #e58a72; }
+  .brand { flex-direction: column; text-align: center; gap: 2px; padding-top: calc(22px + env(safe-area-inset-top, 0px)); padding-bottom: 14px; }
+  .brand svg { width: 84px; height: 84px; border-radius: 50%; box-shadow: 0 2px 10px rgba(61,90,58,.25); }
+  .brand h1 { font-size: 38px; color: var(--accent); margin-top: 6px; }
+  .brand .lat { font-size: 12px; letter-spacing: .32em; color: var(--earth); font-weight: 700; direction: ltr; }
+  .brand p.tag { font-size: 14px; margin-top: 2px; color: var(--muted) !important; font-weight: 500; }
+  .homegrid { gap: 12px; }
+  .hometile { background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-inline-start: 6px solid var(--tc); border-radius: 18px; min-height: 124px; padding: 14px; box-shadow: 0 1px 2px rgba(60,50,20,.06); }
+  .hometile .ic { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--tc) 16%, transparent); }
+  .hometile .ic svg { width: 26px; height: 26px; stroke: var(--tc); }
+  .hometile b { font-size: 20px; } .hometile .tv { color: var(--muted); font-size: 14px; opacity: 1; }
+  .secbar { border-radius: 16px; }
+
+  /* ---- option B: big capital + quiet tiles ---- */
+  .brand { flex-direction: row; text-align: start; gap: 12px; padding-top: calc(16px + env(safe-area-inset-top, 0px)); padding-bottom: 10px; }
+  .brand svg { width: 46px; height: 46px; box-shadow: none; }
+  .brand h1 { font-size: 24px; margin: 0; }
+  .brand p.tag { font-size: 13px; margin: 0; }
+  .homehero { display: grid; gap: 2px; background: #3d5a3a; color: #f5f0e3; border-radius: 16px; padding: 16px 18px; margin: 4px 0 12px; }
+  .homehero .hl { font-size: 14px; opacity: .85; }
+  .homehero .hn { font-size: 34px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .homegrid { gap: 10px; margin-top: 0; }
+  .hometile { border: 1px solid var(--line); border-inline-start: 1px solid var(--line); box-shadow: none; border-radius: 14px; min-height: 96px; padding: 14px 10px; justify-items: center; align-content: center; gap: 8px; text-align: center; }
+  .hometile .ic { background: none; width: auto; height: auto; }
+  .hometile .ic svg { width: 30px; height: 30px; stroke: var(--accent); }
+  .hometile b { font-size: 17px; font-weight: 700; }
+
+  /* ---- white + green, red for anything negative or warning ---- */
+  :root { --bg: #f5f7f4; --surface: #ffffff; --fg: #1d2a21; --muted: #667066; --line: #e0e6dd; --soft: #edf2ea; --bad: #c62f2f; --earth: #6f9a5b; --gold: #b7d4a3; --warnbg: #fde8e6; --warnfg: #a82626; --t-red: #fde8e6; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #131a15; --surface: #1b241e; --fg: #ecf1ec; --muted: #9fafa3; --line: #2f3d33; --soft: #243028; --bad: #f58a80; --earth: #8fbf7d; --gold: #c9e0b8; --warnbg: #3d1f1d; --warnfg: #f5a79f; --t-red: #3d1f1d; } }
+  :root[data-theme="dark"] { --bg: #131a15; --surface: #1b241e; --fg: #ecf1ec; --muted: #9fafa3; --line: #2f3d33; --soft: #243028; --bad: #f58a80; --earth: #8fbf7d; --gold: #c9e0b8; --warnbg: #3d1f1d; --warnfg: #f5a79f; --t-red: #3d1f1d; }
+  body[data-sec] { --brand: #2f6b3c; --accent: #2f6b3c; }
+  .hometile[data-sec] { --tc: #2f6b3c; }
+  .homehero { background: #2f6b3c; color: #fff; }
+  .hero { background: #2f6b3c; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) body[data-sec] { --accent: #9fd18a; }
+    :root:not([data-theme="light"]) .hometile[data-sec] { --tc: #9fd18a; }
+  }
+  :root[data-theme="dark"] body[data-sec] { --accent: #9fd18a; }
+  :root[data-theme="dark"] .hometile[data-sec] { --tc: #9fd18a; }
+  .badge.low, .lowline { border: 1px solid var(--bad); }
+  .brand svg { box-shadow: none; }
+
+  .exrow { margin: 10px 0; } .exrow .line { border: 0; padding: 0 0 6px; }
+  .bar { height: 8px; border-radius: 999px; background: var(--soft); overflow: hidden; } .bar i { display: block; height: 100%; border-radius: 999px; }
+  .lowline { margin-bottom: 8px; }
+  .verdict.win { background: #e5f3e8; color: #1f6b34; } .verdict.lose { background: #fde8e6; color: #b3261e; }
+
+  .chip.add { min-width: 44px; font-size: 20px; font-weight: 700; justify-content: center; }
+  .addbox { display: inline-flex; gap: 6px; align-items: center; } .addbox input { width: 130px; min-height: 40px; }
+  .chart7 { display: flex; align-items: stretch; gap: 6px; height: 150px; }
+  .chart7 .col { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
+  .chart7 .col i { display: block; width: 100%; background: var(--brand); border-radius: 6px 6px 0 0; }
+  .chart7 .col small { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; max-width: 100%; overflow: hidden; }
+
+  .chip.own.del { border-color: var(--bad); color: var(--bad); }
+  .chip.add.on { background: var(--bad); color: #fff; border-color: var(--bad); }
+
+  .chip { flex: none; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; }
+  .chip.own { padding: 0 14px; }
+  .chip.add { width: 44px; min-width: 44px; height: 42px; padding: 0; }
+
+  .bar.big { height: 14px; }
+</style>
+</head>
+<body>
+
+<header class="brand">
+  <svg viewBox="0 0 80 80" role="img" aria-label="شعار أرياف">
+    <circle cx="40" cy="40" r="38" fill="#2f6b3c"/>
+    <circle cx="40" cy="40" r="34" fill="none" stroke="#b7d4a3" stroke-width="1.6"/>
+    <rect x="30" y="20" width="20" height="6" rx="2" fill="#ffffff"/>
+    <rect x="26" y="26" width="28" height="30" rx="8" fill="#ffffff"/>
+    <rect x="31" y="35" width="18" height="12" rx="3" fill="#2f6b3c"/>
+    <path d="M40 20 C40 12 46 8 55 8 C55 16 49 20 40 20 Z" fill="#b7d4a3"/>
+    <path d="M22 62 Q40 70 58 62" fill="none" stroke="#b7d4a3" stroke-width="1.6" stroke-linecap="round"/>
+  </svg>
+  <div class="bt"><h1>أرياف</h1><p class="tag">من خيرات الريف الأردني</p></div>
+</header>
+<div class="tabs-wrap"><nav class="tabs" id="tabs" aria-label="الأقسام"></nav></div>
+<main id="view" aria-live="polite"></main>
+<div class="toast" id="toast" role="status" hidden></div>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+
+<script>
+(function () {
+  "use strict";
+  var KEY = "aryaf-inventory-v1";
+  var TZ = "Asia/Amman";
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---------- helpers
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function normNum(s) {
+    return String(s == null ? "" : s)
+      .replace(/[٠-٩]/g, function (d) { return "٠١٢٣٤٥٦٧٨٩".indexOf(d); })
+      .replace(/[۰-۹]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹".indexOf(d); })
+      .replace(/[٫,،]/g, ".").replace(/\s+/g, "").trim();
+  }
+  function parseNum(s) { var n = Number(normNum(s)); return isFinite(n) && n >= 0 ? n : 0; }
+  function fmt(n, d) {
+    if (!isFinite(n)) return "—";
+    var r = Math.round(n * 100) / 100;
+    return r.toLocaleString("en-US", { maximumFractionDigits: d == null ? 2 : d });
+  }
+  function money(n) { return fmt(n) + " د"; }
+  function h(tag, props) {
+    var e = document.createElement(tag), k;
+    props = props || {};
+    for (k in props) {
+      if (k === "class") e.className = props[k];
+      else if (k === "text") e.textContent = props[k];
+      else if (k.slice(0, 2) === "on") e.addEventListener(k.slice(2), props[k]);
+      else e.setAttribute(k, props[k]);
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (Array.isArray(c)) c.forEach(function (x) { if (x) e.append(x); });
+      else if (c != null && c !== false) e.append(c.nodeType ? c : document.createTextNode(c));
+    }
+    return e;
+  }
+  var toastTimer;
+  function toast(msg) {
+    var t = $("toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 2400);
+  }
+
+  // ---------- state
+  function clean(v) {
+    v = v && typeof v === "object" ? v : {};
+    var num = function (x) { x = Number(x); return isFinite(x) && x >= 0 ? x : 0; };
+    var str = function (x) { return String(x == null ? "" : x).slice(0, 80); };
+    var arr = function (a) { return Array.isArray(a) ? a.slice(0, 3000) : []; };
+    var calc = v.calc && typeof v.calc === "object" ? v.calc : {};
+    return {
+      items: arr(v.items).map(function (o) { o = o || {}; return { id: str(o.id) || uid(), name: str(o.name), cost: num(o.cost), price: num(o.price), qty: Math.floor(num(o.qty)) }; }),
+      assets: arr(v.assets).map(function (o) { o = o || {}; return { id: str(o.id) || uid(), name: str(o.name), value: num(o.value) }; }),
+      expenses: arr(v.expenses).map(function (o) { o = o || {}; return { id: str(o.id) || uid(), name: str(o.name), amount: num(o.amount) }; }),
+      cash: num(v.cash),
+      low: v.low == null ? 5 : Math.floor(num(v.low)),
+      presets: (function (o) { o = o || {}; var r = {}; ["raw", "pack", "assets", "expenses"].forEach(function (k) { r[k] = (Array.isArray(o[k]) ? o[k] : []).map(function (x) { return str(x).slice(0, 40); }).filter(Boolean).slice(0, 30); }); return r; })(v.presets),
+      mats: (Array.isArray(v.mats) ? v.mats.slice(0, 1000) : []).map(function (o) { o = o || {}; return { id: str(o.id) || uid(), name: str(o.name), kind: o.kind === "pack" ? "pack" : "raw", unit: str(o.unit).slice(0, 12), qty: num(o.qty), cost: num(o.cost) }; }),
+      buys: (Array.isArray(v.buys) ? v.buys.slice(0, 5000) : []).map(function (o) { o = o || {}; return { id: str(o.id) || uid(), matId: str(o.matId), name: str(o.name), qty: num(o.qty), paid: num(o.paid), t: Number(o.t) || 0 }; }),
+      sales: (Array.isArray(v.sales) ? v.sales.slice(0, 10000) : []).map(function (o) { o = o || {}; return { id: str(o.id) || uid(), itemId: str(o.itemId), name: str(o.name), qty: Math.floor(num(o.qty)), price: num(o.price), cost: num(o.cost), shop: str(o.shop).slice(0, 40), t: Number(o.t) || 0 }; }),
+      calc: { extra: num(calc.extra), units: num(calc.units) },
+      lastBackup: Number(v.lastBackup) || 0,
+      born: Number(v.born) || Date.now()
+    };
+  }
+  var S;
+  try { S = clean(JSON.parse(localStorage.getItem(KEY))); } catch (e) { S = clean(null); }
+  var saveFailed = false;
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); saveFailed = false; }
+    catch (e) { if (!saveFailed) toast("ما قدرت أحفظ على هالجهاز"); saveFailed = true; }
+  }
+
+  // ---------- calculations
+  function marginPct(it) { return it.price > 0 ? (it.price - it.cost) / it.price * 100 : null; }
+  function totals() {
+    var stockCost = 0, stockValue = 0, qty = 0, wProfit = 0, plain = 0, plainN = 0;
+    S.items.forEach(function (it) {
+      stockCost += it.cost * it.qty; stockValue += it.price * it.qty; qty += it.qty;
+      wProfit += (it.price - it.cost) * it.qty;
+      if (it.price > 0) { plain += it.price - it.cost; plainN++; }
+    });
+    var matsV = S.mats.reduce(function (a, x) { return a + x.qty * x.cost; }, 0);
+    var assets = S.assets.reduce(function (a, x) { return a + x.value; }, 0);
+    var exp = S.expenses.reduce(function (a, x) { return a + x.amount; }, 0);
+    var avgProfit = qty > 0 ? wProfit / qty : (plainN ? plain / plainN : 0);
+    return {
+      stockCost: stockCost, stockValue: stockValue, qty: qty, assets: assets, expenses: exp,
+      mats: matsV, capital: stockCost + matsV + assets + S.cash, profit: stockValue - stockCost,
+      margin: stockValue > 0 ? (stockValue - stockCost) / stockValue * 100 : null, avgProfit: avgProfit
+    };
+  }
+
+  // ---------- rendering infra
+  var tab = "home", live = [];
+  var TABS = [
+    { id: "summary", label: "الملخص", icon: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>' },
+    { id: "stock", label: "المخزون", icon: '<path d="M3 8l9-5 9 5-9 5-9-5zM3 8v8l9 5 9-5V8M12 13v8"/>' },
+    { id: "assets", label: "الأصول", icon: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 12h16M9 7v2M9 15v2"/>' },
+    { id: "expenses", label: "المصاريف", icon: '<path d="M12 2v20M17 6.5C16 5 14.3 4.5 12.5 4.5 9.8 4.5 8 5.8 8 7.8c0 4 9 2 9 6.2 0 2-2 3.5-5 3.5-2 0-3.8-.7-5-2.2"/>' }
+  ];
+  function touch() { save(); live.forEach(function (f) { f(); }); }
+
+  function numInput(value, onChange, ph, label) {
+    var inp = h("input", { type: "text", inputmode: "decimal", autocomplete: "off", placeholder: ph || "0", "aria-label": label || "" });
+    inp.value = value ? String(value) : "";
+    inp.addEventListener("input", function () { onChange(parseNum(inp.value)); });
+    return inp;
+  }
+  function field(label, control) { var id = "f" + uid(); control.id = id; return h("div", { class: "field" }, h("label", { for: id, text: label }), control); }
+  function textInput(value, onChange, ph, label) {
+    var inp = h("input", { type: "text", autocomplete: "off", placeholder: ph || "", "aria-label": label || "" });
+    inp.value = value || "";
+    inp.addEventListener("input", function () { onChange(inp.value.slice(0, 80)); });
+    return inp;
+  }
+  function delRow(onYes) {
+    var ask = h("span", { class: "ask", text: "تحذف هالبند؟" });
+    var del = h("button", { class: "btn alt sm", type: "button", text: "حذف" });
+    var yes = h("button", { class: "btn danger sm", type: "button", text: "احذف" });
+    var no = h("button", { class: "btn alt sm", type: "button", text: "لا" });
+    var box = h("div", { class: "del-row" }, ask, no, yes, del);
+    function mode(confirming) { ask.hidden = no.hidden = yes.hidden = !confirming; del.hidden = confirming; }
+    mode(false);
+    del.addEventListener("click", function () { mode(true); });
+    no.addEventListener("click", function () { mode(false); });
+    yes.addEventListener("click", onYes);
+    return box;
+  }
+
+  // ---------- tabs
+  var tab = "home", live = [];
+  var TABS = [
+    { id: "summary", label: "الملخص", icon: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>' },
+    { id: "stock", label: "المخزون", icon: '<path d="M3 8l9-5 9 5-9 5-9-5zM3 8v8l9 5 9-5V8M12 13v8"/>' },
+    { id: "assets", label: "الأصول", icon: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 12h16M9 7v2M9 15v2"/>' },
+    { id: "expenses", label: "المصاريف", icon: '<path d="M12 2v20M17 6.5C16 5 14.3 4.5 12.5 4.5 9.8 4.5 8 5.8 8 7.8c0 4 9 2 9 6.2 0 2-2 3.5-5 3.5-2 0-3.8-.7-5-2.2"/>' }
+    , { id: "sales", label: "المبيعات", icon: '<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>' }
+    , { id: "mats", label: "مواد خام", icon: '<path d="M5 11h14l-1.5 9h-11zM8 11l4-7 4 7"/>' }
+  ];
+  function touch() { save(); live.forEach(function (f) { f(); }); }
+
+  function numInput(value, onChange, ph, label) {
+    var inp = h("input", { type: "text", inputmode: "decimal", autocomplete: "off", placeholder: ph || "0", "aria-label": label || "" });
+    inp.value = value ? String(value) : "";
+    inp.addEventListener("input", function () { onChange(parseNum(inp.value)); });
+    return inp;
+  }
+  function textInput(value, onChange, ph, label) {
+    var inp = h("input", { type: "text", autocomplete: "off", placeholder: ph || "", "aria-label": label || "" });
+    inp.value = value || "";
+    inp.addEventListener("input", function () { onChange(inp.value.slice(0, 80)); });
+    return inp;
+  }
+  function plain(ph, label, mode) { return h("input", { type: "text", inputmode: mode || "text", autocomplete: "off", placeholder: ph, "aria-label": label }); }
+  function field(label, control) { var id = "f" + uid(); control.id = id; return h("div", { class: "field" }, h("label", { for: id, text: label }), control); }
+  function line(label, valueNode, hint) {
+    return h("div", { class: "line" }, h("span", {}, label, hint ? h("small", { text: hint }) : null), valueNode);
+  }
+  function delRow(onYes) {
+    var ask = h("span", { class: "ask", text: "تحذف هالبند؟" });
+    var del = h("button", { class: "btn alt sm", type: "button", text: "حذف" });
+    var yes = h("button", { class: "btn danger sm", type: "button", text: "احذف" });
+    var no = h("button", { class: "btn alt sm", type: "button", text: "لا" });
+    var box = h("div", { class: "del-row" }, ask, no, yes, del);
+    function mode(c) { ask.hidden = no.hidden = yes.hidden = !c; del.hidden = c; }
+    mode(false);
+    del.addEventListener("click", function () { mode(true); });
+    no.addEventListener("click", function () { mode(false); });
+    yes.addEventListener("click", onYes);
+    return box;
+  }
+
+  function renderNav() {
+    var nav = $("tabs"); nav.textContent = "";
+    TABS.forEach(function (t) {
+      var b = h("button", { type: "button", text: t.label });
+      if (t.id === tab) b.setAttribute("aria-current", "page");
+      b.addEventListener("click", function () { tab = t.id; render(); window.scrollTo(0, 0); });
+      nav.appendChild(b);
+    });
+  }
+  var cashUnlocked = false, matKind = "raw";
+  var SECNAME = { mats: "مواد خام", sales: "المبيعات", summary: "الملخص", stock: "المخزون", buy: "شو أشتري", help: "مساعدة", assets: "الأصول", expenses: "المصاريف" };
+  function secBar() {
+    var b = h("button", { type: "button", text: "→ الرئيسية" });
+    b.addEventListener("click", function () { chipDel = false; tab = "home"; render(); window.scrollTo(0, 0); });
+    return h("div", { class: "secbar" }, b, h("h2", { text: SECNAME[tab] || "" }));
+  }
+  function renderHome(v) {
+    var t = totals(), ex = S.expenses.reduce(function (a, x) { return a + x.amount; }, 0);
+    var vals = { mats: money(t.mats), sales: "اليوم " + money(salesStats().today.rev), stock: fmt(t.qty, 0) + " حبة", assets: money(t.assets), expenses: money(ex) + " بالشهر", summary: "رأس المال " + money(t.capital) };
+    var ORDER = ["stock", "sales", "mats", "assets", "expenses", "summary"];
+    v.appendChild(h("div", { class: "homehero" }, h("span", { class: "hl", text: "رأس المال الكلي" }), h("span", { class: "hn", text: money(t.capital) })));
+    if (backupDue()) {
+      var bk = h("button", { type: "button", class: "btn", text: "نزّل نسخة الآن" });
+      bk.addEventListener("click", function () { exportData(); render(); });
+      v.appendChild(h("div", { class: "card warnbk" }, h("b", { text: S.lastBackup ? "مرّ أسبوع بدون نسخة احتياطية" : "ما عملت نسخة احتياطية لسا" }), h("p", { class: "note", text: "إذا انمسحت بيانات المتصفح بتضيع الأرقام." }), bk));
+    }
+    var g = h("div", { class: "homegrid" });
+    TABS.slice().sort(function (a, b) { return ORDER.indexOf(a.id) - ORDER.indexOf(b.id); }).forEach(function (x) {
+      var ic = h("span", { class: "ic" }); ic.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + x.icon + "</svg>";
+      var b = h("button", { type: "button", class: "hometile", "data-sec": x.id }, ic, h("b", { text: x.label }));
+      b.addEventListener("click", function () { chipDel = false; tab = x.id; render(); window.scrollTo(0, 0); });
+      g.appendChild(b);
+    });
+    v.appendChild(g);
+    var nb = lowList().length;
+    var bb = h("button", { type: "button", class: "btn alt", text: "شو أشتري" + (nb ? " (" + nb + ")" : "") });
+    bb.addEventListener("click", function () { tab = "buy"; render(); window.scrollTo(0, 0); });
+    var hb = h("button", { type: "button", class: "btn alt", text: "؟ مساعدة" });
+    hb.addEventListener("click", function () { tab = "help"; render(); window.scrollTo(0, 0); });
+    v.appendChild(h("div", { class: "row2", style: "margin-top:12px" }, bb, hb));
+    v.appendChild(h("p", { class: "note center", text: "اختار القسم، اكتب الأرقام، والتطبيق بيحسب الربح والهامش لحاله." }));
+  }
+  function render() {
+    live = [];
+    var v = $("view"); v.textContent = "";
+    document.body.setAttribute("data-sec", tab);
+    if (tab !== "home") v.appendChild(secBar());
+    if (tab === "home") renderHome(v);
+    else if (tab === "summary") renderSummary(v);
+    else if (tab === "stock") renderStock(v);
+    else if (tab === "sales") renderSales(v);
+    else if (tab === "mats") renderMats(v);
+    else if (tab === "buy") renderBuy(v);
+    else if (tab === "help") renderHelp(v);
+    else if (tab === "assets") { renderList(v, "assets", { title: "الأصول", valueKey: "value", namePh: "اسم الأصل", valuePh: "القيمة (د)", empty: "فاضي", presets: ["ثلاجة", "فريزر", "ميزان", "معدات", "رفوف"], totalLabel: "المجموع" }); renderAssetsExtras(v); }
+    else renderList(v, "expenses", { title: "المصاريف الشهرية", valueKey: "amount", namePh: "البند (موظف، إيجار...)", valuePh: "المبلغ بالشهر (د)", empty: "فاضي", presets: ["موظف", "إيجار", "كهرباء", "ماء", "إنترنت", "مواصلات"], totalLabel: "المجموع" });
+    v.appendChild(h("footer", {}, "تصميم ", h("b", { text: "طارق" }), h("br"), h("span", { class: "en", text: "Made by TAREQ" })));
+    live.forEach(function (f) { f(); });
+  }
+
+  // ---------- custom preset chips
+  var chipDel = false;
+  function customChips(chips, key, onPick) {
+    S.presets[key].forEach(function (name) {
+      var b = h("button", { type: "button", class: "chip own" + (chipDel ? " del" : ""), text: chipDel ? name + " ✕" : name });
+      b.addEventListener("click", function () {
+        if (!chipDel) { onPick(name); return; }
+        S.presets[key] = S.presets[key].filter(function (n) { return n !== name; }); save(); render();
+      });
+      chips.appendChild(b);
+    });
+    var add = h("button", { type: "button", class: "chip add", "aria-label": "إضافة اسم جديد", text: "+" });
+    add.addEventListener("click", function () {
+      var inp = h("input", { type: "text", placeholder: "اسم جديد", "aria-label": "اسم جديد", autocomplete: "off" });
+      var ok = h("button", { type: "button", class: "btn sm", text: "حفظ" });
+      function done() { var n = inp.value.trim().slice(0, 40); if (!n) { toast("اكتب الاسم"); return; } if (S.presets[key].indexOf(n) < 0) S.presets[key].push(n); save(); render(); }
+      ok.addEventListener("click", done);
+      inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); done(); } });
+      var box = h("span", { class: "addbox" }, inp, ok); chips.replaceChild(box, add); inp.focus();
+    });
+    chips.appendChild(add);
+    if (S.presets[key].length) {
+      var minus = h("button", { type: "button", class: "chip add" + (chipDel ? " on" : ""), "aria-label": "حذف اسم", text: "−" });
+      minus.addEventListener("click", function () { chipDel = !chipDel; render(); });
+      chips.appendChild(minus);
+    }
+  }
+
+  // ---------- mats
+  function buysMonth() { var mo = dayKey(Date.now()).slice(0, 7); return S.buys.reduce(function (a, b) { return dayKey(b.t).slice(0, 7) === mo ? a + b.paid : a; }, 0); }
+  var PRESETS = { raw: [["تمر", "كغم"], ["عنب", "كغم"], ["خروب", "كغم"], ["مشمش", "كغم"], ["تين", "كغم"], ["سكر", "كغم"]], pack: [["مطربانات", "حبة"], ["قزايز", "حبة"], ["أغطية", "حبة"], ["ملصقات", "حبة"], ["أكياس", "حبة"], ["علب كرتون", "حبة"]] };
+  function renderMats(v) {
+    var seg = h("div", { class: "seg" });
+    [["raw", "خامات"], ["pack", "تغليف"]].forEach(function (k) {
+      var b = h("button", { type: "button", text: k[1], "aria-pressed": matKind === k[0] ? "true" : "false" });
+      b.addEventListener("click", function () { matKind = k[0]; render(); });
+      seg.appendChild(b);
+    });
+    v.appendChild(seg);
+    var fName = plain("اسم المادة", "اسم المادة"), fUnit = plain("الوحدة", "الوحدة"), fQty = plain("الكمية", "الكمية", "decimal"), fCost = plain("سعر الوحدة (د)", "سعر الوحدة", "decimal");
+    fUnit.value = matKind === "raw" ? "كغم" : "حبة";
+    var chips = h("div", { class: "chips" });
+    PRESETS[matKind].forEach(function (pr) { chips.appendChild(h("button", { class: "chip", type: "button", text: pr[0], onclick: function () { fName.value = pr[0]; fUnit.value = pr[1]; fQty.focus(); } })); });
+    customChips(chips, matKind, function (n) { fName.value = n; fQty.focus(); });
+    var form = h("form", { class: "card", novalidate: "", autocomplete: "off" }, chips, fName,
+      h("div", { class: "row3" }, fQty, fUnit, fCost), h("button", { class: "btn", type: "submit", text: "إضافة" }));
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var name = fName.value.trim(); if (!name) { toast("اكتب اسم المادة"); fName.focus(); return; }
+      S.mats.unshift({ id: uid(), name: name.slice(0, 80), kind: matKind, unit: fUnit.value.trim().slice(0, 12), qty: parseNum(fQty.value), cost: parseNum(fCost.value) });
+      save(); render(); toast("انضافت المادة");
+    });
+    v.appendChild(form);
+    var list = S.mats.filter(function (m) { return m.kind === matKind; });
+    var tv = h("span", { class: "val" }), tb = h("span", { class: "val" });
+    v.appendChild(h("div", { class: "card" }, h("h2", { text: matKind === "raw" ? "الخامات" : "التغليف" }),
+      list.length ? h("div", {}, line("قيمتها", tv), line("مشتريات هالشهر (الكل)", tb)) : h("div", { class: "empty", text: "ما في مواد بعد، اضغط على اسم جاهز من فوق" })));
+    live.push(function () { tv.textContent = money(list.reduce(function (a, m) { return a + m.qty * m.cost; }, 0)); tb.textContent = money(buysMonth()); });
+    list.forEach(function (m) { v.appendChild(matCard(m)); });
+    if (S.buys.length) {
+      var fm = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, dateStyle: "short", timeStyle: "short" });
+      var bl = h("div", { class: "card" }, h("h2", { text: "آخر المشتريات" }));
+      S.buys.slice(0, 20).forEach(function (b) {
+        bl.appendChild(h("div", { class: "sale" },
+          h("div", { class: "line" }, h("span", {}, (b.name || "بدون اسم") + " × " + fmt(b.qty), h("small", { text: fm.format(b.t) })), h("span", { class: "val", text: money(b.paid) })),
+          delRow(function () {
+            var m = S.mats.filter(function (x) { return x.id === b.matId; })[0];
+            if (m) m.qty = Math.max(0, m.qty - b.qty);
+            S.buys = S.buys.filter(function (y) { return y !== b; }); save(); render(); toast("انحذف الشراء ونقصت الكمية");
+          })));
+      });
+      v.appendChild(bl);
+    }
+  }
+  function matCard(m) {
+    var qtyInp = h("input", { type: "text", inputmode: "decimal", autocomplete: "off", "aria-label": "الكمية" }); qtyInp.value = String(m.qty);
+    var minus = h("button", { class: "step", type: "button", "aria-label": "نقص", text: "−" }), plus = h("button", { class: "step", type: "button", "aria-label": "زيد", text: "+" });
+    var val = h("small");
+    function setQ(n) { m.qty = Math.max(0, Math.round(n * 100) / 100); qtyInp.value = String(m.qty); touch(); }
+    minus.addEventListener("click", function () { setQ(m.qty - 1); }); plus.addEventListener("click", function () { setQ(m.qty + 1); });
+    qtyInp.addEventListener("input", function () { m.qty = parseNum(qtyInp.value); touch(); });
+    qtyInp.addEventListener("blur", function () { qtyInp.value = String(m.qty); });
+    var bq = plain("كمية الشراء", "كمية الشراء", "decimal"), bp = plain("المبلغ اللي دفعته (د)", "المبلغ المدفوع", "decimal");
+    var buyBox = h("div", { class: "mini", hidden: "" }, bq, bp, h("button", { class: "btn sm", type: "button", text: "تأكيد", onclick: function () {
+      var q = parseNum(bq.value), paid = parseNum(bp.value);
+      if (!(q > 0)) { toast("اكتب الكمية"); return; }
+      m.qty = Math.round((m.qty + q) * 100) / 100; if (paid > 0) m.cost = Math.round(paid / q * 1000) / 1000;
+      S.buys.unshift({ id: uid(), matId: m.id, name: m.name, qty: q, paid: paid, t: Date.now() });
+      save(); render(); toast("انسجل الشراء وزادت الكمية");
+    } }));
+    var buyBtn = h("button", { class: "btn alt sm", type: "button", text: "اشتريت", onclick: function () { buyBox.hidden = !buyBox.hidden; } });
+    var card = h("div", { class: "card item-card" },
+      field("اسم المادة", textInput(m.name, function (x) { m.name = x; save(); }, "الاسم", "اسم المادة")),
+      h("div", { class: "row2" }, field("سعر الوحدة (د)", numInput(m.cost, function (n) { m.cost = n; touch(); }, "0.00", "سعر الوحدة")), field("الوحدة", textInput(m.unit, function (x) { m.unit = x.slice(0, 12); save(); }, "كغم", "الوحدة"))),
+      h("div", { class: "field" }, h("label", { text: "الكمية المتوفرة" }), h("div", { class: "stepper" }, minus, qtyInp, plus)),
+      h("div", { class: "meta" }, val, buyBtn), buyBox,
+      delRow(function () { S.mats = S.mats.filter(function (x) { return x !== m; }); save(); render(); toast("انحذفت المادة"); }));
+    live.push(function () { val.textContent = "القيمة " + money(m.qty * m.cost); });
+    return card;
+  }
+
+  // ---------- sales
+  function dayKey(ts) { return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(ts); }
+  function salesStats() {
+    var now = dayKey(Date.now()), mo = now.slice(0, 7);
+    var r = { today: { q: 0, rev: 0, profit: 0 }, month: { q: 0, rev: 0, profit: 0 } };
+    S.sales.forEach(function (x) {
+      var k = dayKey(x.t), rev = x.price * x.qty, pr = (x.price - x.cost) * x.qty;
+      if (k === now) { r.today.q += x.qty; r.today.rev += rev; r.today.profit += pr; }
+      if (k.slice(0, 7) === mo) { r.month.q += x.qty; r.month.rev += rev; r.month.profit += pr; }
+    });
+    return r;
+  }
+  function renderSales(v) {
+    var st = salesStats();
+    if (!S.items.length) { v.appendChild(h("div", { class: "card" }, h("div", { class: "empty", text: "ضيف أصناف من قسم المخزون أول، وبعدها سجّل مبيعاتك هون." }))); }
+    else {
+      var sel = h("select", { "aria-label": "الصنف" });
+      S.items.forEach(function (it) { sel.appendChild(h("option", { value: it.id, text: (it.name || "بدون اسم") + " — متوفر " + it.qty })); });
+      var fQty = plain("الكمية", "الكمية", "numeric"); fQty.value = "1";
+      var fPrice = plain("سعر البيع", "سعر البيع", "decimal");
+      var fShop = plain("اسم المحل (اختياري)", "اسم المحل"); fShop.setAttribute("list", "shoplist"); fShop.maxLength = 40;
+      var dl = h("datalist", { id: "shoplist" }); shopNames().forEach(function (n) { dl.appendChild(h("option", { value: n })); });
+      function cur() { return S.items.filter(function (x) { return x.id === sel.value; })[0]; }
+      function syncPrice() { var it = cur(); fPrice.value = it ? String(it.price) : ""; }
+      sel.addEventListener("change", syncPrice); syncPrice();
+      var form = h("form", { class: "card", novalidate: "", autocomplete: "off" },
+        h("h2", { text: "سجّل بيعة" }),
+        field("الصنف", sel),
+        h("div", { class: "row2" }, field("الكمية", fQty), field("سعر الحبة (د)", fPrice)),
+        field("المحل", fShop), dl,
+        h("button", { class: "btn", type: "submit", text: "بعت" })
+      );
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var it = cur(); if (!it) return;
+        var q = Math.floor(parseNum(fQty.value));
+        if (q < 1) { toast("اكتب الكمية"); fQty.focus(); return; }
+        if (q > it.qty) { toast("المتوفر " + it.qty + " بس"); return; }
+        var price = parseNum(fPrice.value); if (!(price > 0)) price = it.price;
+        if (!(price > 0)) { toast("اكتب سعر البيع"); fPrice.focus(); return; }
+        S.sales.unshift({ id: uid(), itemId: it.id, name: it.name, qty: q, price: price, cost: it.cost, shop: fShop.value.trim().slice(0, 40), t: Date.now() });
+        it.qty -= q; save(); render(); toast("انسجلت البيعة ونقصت من المخزون");
+      });
+      v.appendChild(form);
+    }
+    function block(title, d, extra) {
+      var kids = [h("h2", { text: title }), line("عدد الحبات", h("span", { class: "val", text: fmt(d.q, 0) })), line("المبيعات", h("span", { class: "val", text: money(d.rev) })), line("الربح", h("span", { class: "val " + (d.profit < 0 ? "bad" : "good"), text: money(d.profit) }))];
+      if (extra) kids = kids.concat(extra);
+      return h("div", { class: "card" }, kids);
+    }
+    v.appendChild(block("اليوم", st.today));
+    var ex = S.expenses.reduce(function (a, x) { return a + x.amount; }, 0), net = st.month.profit - ex;
+    v.appendChild(block("هذا الشهر", st.month, [
+      line("المصاريف الشهرية", h("span", { class: "val", text: money(ex) })),
+      line("الصافي بعد المصاريف", h("span", { class: "val " + (net < 0 ? "bad" : "good"), text: (net < 0 ? "خسارة " : "ربح ") + money(Math.abs(net)) }))
+    ]));
+    if (S.sales.length) v.appendChild(exportCard());
+    var list = h("div", { class: "card" }, h("h2", { text: "آخر المبيعات" }));
+    if (!S.sales.length) list.appendChild(h("div", { class: "empty", text: "ما في مبيعات بعد" }));
+    var fm = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, dateStyle: "short", timeStyle: "short" });
+    S.sales.slice(0, 40).forEach(function (x) {
+      list.appendChild(h("div", { class: "sale" },
+        h("div", { class: "line" }, h("span", {}, (x.name || "بدون اسم") + " × " + x.qty, h("small", { text: (x.shop ? x.shop + " · " : "") + fm.format(x.t) })), h("span", { class: "val", text: money(x.price * x.qty) })),
+        delRow(function () {
+          var it = S.items.filter(function (i) { return i.id === x.itemId; })[0];
+          if (it) it.qty += x.qty;
+          S.sales = S.sales.filter(function (y) { return y !== x; }); save(); render(); toast("انحذفت البيعة ورجعت للمخزون");
+        })));
+    });
+    v.appendChild(list);
+  }
+
+  // ---------- shop names, export, shopping list, help
+  var WEEK = 7 * 864e5;
+  function backupDue() { return (S.items.length || S.sales.length) && Date.now() - (S.lastBackup || S.born) > WEEK; }
+  function syncMeta() {
+    try { if (window.caches) caches.open("aryaf-meta").then(function (c) { return c.put("meta.json", new Response(JSON.stringify({ t: S.lastBackup || S.born, has: !!(S.items.length || S.sales.length) }))); }).catch(function () {}); } catch (e) {}
+  }
+  function enableReminder() {
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) { toast("جهازك ما بدعم الإشعارات"); return; }
+    Notification.requestPermission().then(function (r) {
+      if (r !== "granted") { toast("ما انسمح بالإشعارات"); return; }
+      syncMeta();
+      navigator.serviceWorker.ready.then(function (reg) {
+        if (reg.periodicSync) reg.periodicSync.register("backup-check", { minInterval: 864e5 }).then(function () { toast("تم تفعيل التذكير"); }, function () { toast("ما قدرت أفعّل التذكير بالخلفية. رح يظهر التنبيه جوا التطبيق"); });
+        else toast("جهازك ما بدعم التذكير بالخلفية. رح يظهر التنبيه جوا التطبيق");
+      });
+    });
+  }
+  function shopNames() { var m = {}; S.sales.forEach(function (x) { if (x.shop) m[x.shop] = 1; }); return Object.keys(m).sort(); }
+  function monthKey(ts) { return dayKey(ts).slice(0, 7); }
+  function exportCard() {
+    var months = {}; S.sales.forEach(function (x) { months[monthKey(x.t)] = 1; });
+    var mSel = h("select", { "aria-label": "الشهر" }, h("option", { value: "", text: "كل الشهور" }));
+    Object.keys(months).sort().reverse().forEach(function (m) { mSel.appendChild(h("option", { value: m, text: m })); });
+    var sSel = h("select", { "aria-label": "المحل" }, h("option", { value: "", text: "كل المحلات" }));
+    shopNames().forEach(function (n) { sSel.appendChild(h("option", { value: n, text: n })); });
+    var b = h("button", { class: "btn alt", type: "button", text: "تصدير المبيعات Excel" });
+    b.addEventListener("click", function () { exportSales(mSel.value, sSel.value); });
+    return h("div", { class: "card" }, h("h2", { text: "تصدير المبيعات" }), h("div", { class: "row2" }, field("الشهر", mSel), field("المحل", sSel)), b);
+  }
+  function exportSales(month, shop) {
+    var q = function (x) { return '"' + String(x).replace(/"/g, '""') + '"'; };
+    var list = S.sales.filter(function (x) { return (!month || monthKey(x.t) === month) && (!shop || x.shop === shop); }).sort(function (a, b) { return a.t - b.t; });
+    if (!list.length) { toast("ما في مبيعات بهالاختيار"); return; }
+    var rows = [["التاريخ", "المحل", "الصنف", "الكمية", "سعر الحبة", "المبلغ", "الربح"].map(q).join(",")];
+    var by = {}, tr = 0, tp = 0;
+    list.forEach(function (x) {
+      var rev = x.price * x.qty, pr = (x.price - x.cost) * x.qty; tr += rev; tp += pr;
+      var k = x.shop || "بدون محل"; by[k] = by[k] || { r: 0, p: 0 }; by[k].r += rev; by[k].p += pr;
+      rows.push([dayKey(x.t), q(x.shop || ""), q(x.name), x.qty, x.price, +rev.toFixed(3), +pr.toFixed(3)].join(","));
+    });
+    rows.push(["", q("الإجمالي"), "", "", "", +tr.toFixed(3), +tp.toFixed(3)].join(","));
+    rows.push(""); rows.push([q("ملخص حسب المحل"), q("المبلغ"), q("الربح")].join(","));
+    Object.keys(by).sort(function (a, b) { return by[b].r - by[a].r; }).forEach(function (k) { rows.push([q(k), +by[k].r.toFixed(3), +by[k].p.toFixed(3)].join(",")); });
+    var blob = new Blob(["﻿" + rows.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = "aryaf-sales" + (month ? "-" + month : "") + ".csv"; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000); toast("نزّلت ملف Excel");
+  }
+  function lowList() {
+    var out = [];
+    S.items.forEach(function (x) { if (x.qty <= S.low) out.push({ name: x.name || "بدون اسم", qty: x.qty, unit: "حبة", kind: "صنف" }); });
+    S.mats.forEach(function (x) { if (x.qty <= S.low) out.push({ name: x.name || "بدون اسم", qty: x.qty, unit: x.unit || "", kind: x.kind === "pack" ? "تغليف" : "خامة" }); });
+    return out.sort(function (a, b) { return a.qty - b.qty; });
+  }
+  function renderBuy(v) {
+    var l = lowList();
+    var c = h("div", { class: "card" }, h("h2", { text: "قاربت تخلص (≤ " + S.low + ")" }));
+    if (!l.length) c.appendChild(h("div", { class: "empty", text: "كل شي متوفر، ما في إشي لازم تشتريه" }));
+    l.forEach(function (x) {
+      c.appendChild(h("div", { class: "line" }, h("span", {}, x.name, h("small", { text: x.kind })), h("span", { class: "val bad", text: x.qty <= 0 ? "خلص" : "باقي " + fmt(x.qty, 0) + " " + x.unit })));
+    });
+    v.appendChild(c);
+    if (l.length) {
+      var b = h("button", { class: "btn alt", type: "button", text: "شارك القائمة" });
+      b.addEventListener("click", function () {
+        var t = "شو أشتري:\n" + l.map(function (x) { return "- " + x.name + (x.qty <= 0 ? " (خلص)" : " (باقي " + fmt(x.qty, 0) + ")"); }).join("\n");
+        if (navigator.share) { navigator.share({ text: t }).catch(function () {}); }
+        else if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t).then(function () { toast("اننسخت القائمة"); }, function () { toast("ما قدرت أنسخ"); }); }
+        else toast("المتصفح ما بدعم المشاركة");
+      });
+      v.appendChild(b);
+    }
+    v.appendChild(h("p", { class: "note center", text: "حد التنبيه بتغيره من قسم المخزون." }));
+  }
+  var HELP = [
+    ["كيف أضيف صنف؟", "المخزون ← اكتب الاسم والتكلفة وسعر البيع والكمية ← إضافة."],
+    ["كيف أسجل بيعة؟", "المبيعات ← اختار الصنف ← الكمية والسعر ← (اسم المحل اختياري) ← بعت. الكمية بتنقص من المخزون لحالها."],
+    ["غلطت ببيعة، شو أعمل؟", "المبيعات ← آخر المبيعات ← حذف ← احذف. الكمية بترجع للمخزون."],
+    ["كيف أضيف خامة؟", "مواد خام ← اختار خامات أو تغليف ← اكتب الاسم (أو اختار من الأزرار) ← الكمية والتكلفة."],
+    ["اشتريت خامة جديدة", "مواد خام ← على الخامة اضغط اشتريت ← اكتب الكمية والمبلغ. التطبيق بيحسب متوسط التكلفة."],
+    ["شو معنى قارب يخلص؟", "الصنف أو الخامة وصلت للحد اللي حددته. كلها بتطلع بصفحة شو أشتري. بتغير الحد من المخزون."],
+    ["كيف أعرف ربحان ولا خسران؟", "الملخص ← أول بطاقة: ربح المبيعات هالشهر ناقص المصاريف الشهرية."],
+    ["كيف أضيف مصروف؟", "المصاريف ← اكتب البند والمبلغ بالشهر (إيجار، موظف...) ← إضافة."],
+    ["كيف أطلع تقرير Excel؟", "المبيعات ← تصدير المبيعات ← اختار الشهر أو المحل ← تصدير. المخزون: من الأصول ← تصدير Excel."],
+    ["كيف أحفظ نسخة احتياطية؟", "الأصول ← تصدير نسخة. وعلى جهاز ثاني: استيراد نسخة. البيانات بتنحفظ على هالجهاز بس."],
+    ["بيشتغل بدون إنترنت؟", "أيوه. بعد أول فتح بيشتغل أوفلاين. على الآيفون ثبّته على الشاشة الرئيسية قبل ما تدخل بيانات."]
+  ];
+  function renderHelp(v) {
+    var c = h("div", { class: "card" }, h("h2", { text: "أسئلة شائعة" }));
+    HELP.forEach(function (x) {
+      c.appendChild(h("details", { class: "faq" }, h("summary", { text: x[0] }), h("p", { class: "note", text: x[1] })));
+    });
+    v.appendChild(c);
+  }
+
+  // ---------- stock
+  function renderStock(v) {
+    var fName = plain("اسم الصنف", "اسم الصنف"), fCost = plain("تكلفة الحبة", "تكلفة الحبة", "decimal"),
+        fPrice = plain("سعر البيع", "سعر البيع", "decimal"), fQty = plain("الكمية", "الكمية", "numeric");
+    var form = h("form", { class: "card", novalidate: "", autocomplete: "off" },
+      h("div", { class: "row3" }, fName, fCost, fPrice),
+      h("div", { class: "addrow" }, fQty, h("button", { class: "btn", type: "submit", text: "إضافة" }))
+    );
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var name = fName.value.trim();
+      if (!name) { toast("اكتب اسم الصنف"); fName.focus(); return; }
+      S.items.unshift({ id: uid(), name: name.slice(0, 80), cost: parseNum(fCost.value), price: parseNum(fPrice.value), qty: Math.floor(parseNum(fQty.value)) });
+      save(); render(); toast("انضاف الصنف");
+      var n = document.querySelector("form input"); if (n) n.focus();
+    });
+    v.appendChild(form);
+
+    var lowBox = h("div", { class: "lowline", hidden: "" });
+    var tCost = h("span", { class: "val" }), tVal = h("span", { class: "val" }), tQty = h("span", { class: "val" }), tProfit = h("span", { class: "val" });
+    v.appendChild(h("div", { class: "card" }, h("h2", { text: "المخزون" }),
+      S.items.length ? h("div", {}, line("قيمة المخزون (تكلفة)", tCost), line("قيمته بسعر البيع", tVal), line("عدد الحبات", tQty), line("الربح المتوقع", tProfit)) : emptyJar(),
+      S.items.length ? line("نبّهني لما الكمية ≤", numInput(S.low, function (n) { S.low = Math.floor(n); touch(); }, "5", "حد التنبيه")) : null,
+      lowBox,
+      S.items.length ? h("p", { class: "note", text: "الهامش % = (سعر البيع − التكلفة) ÷ سعر البيع." }) : null
+    ));
+    var cards = [];
+    if (S.items.length > 4) {
+      var sr = h("input", { type: "text", placeholder: "ابحث عن صنف", "aria-label": "بحث", autocomplete: "off" });
+      sr.addEventListener("input", function () {
+        var k = sr.value.trim().toLowerCase();
+        cards.forEach(function (c) { c.el.hidden = !!k && c.it.name.toLowerCase().indexOf(k) < 0; });
+      });
+      v.appendChild(sr);
+    }
+    live.push(function () {
+      var t = totals();
+      tCost.textContent = money(t.stockCost); tVal.textContent = money(t.stockValue);
+      tQty.textContent = fmt(t.qty, 0); tProfit.textContent = money(t.profit);
+      var n = S.items.filter(function (x) { return x.qty <= S.low; }).length;
+      lowBox.hidden = !n; lowBox.textContent = n ? "⚠ " + n + " " + (n === 1 ? "صنف" : "أصناف") + " قارب يخلص" : "";
+    });
+    S.items.forEach(function (it) { var el = itemCard(it); cards.push({ it: it, el: el }); v.appendChild(el); });
+  }
+
+  function emptyJar() {
+    var e = h("div", { class: "empty" });
+    e.innerHTML = '<svg class="jar" viewBox="0 0 64 64" fill="none" stroke="var(--earth)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h20M24 12v6M40 12v6M20 24c0-4 2-6 4-6h16c2 0 4 2 4 6v26c0 4-3 6-6 6H26c-3 0-6-2-6-6z"/><path d="M26 36h12" stroke="var(--gold)"/></svg>';
+    e.appendChild(document.createTextNode("ما في أصناف بعد — ضيف أول صنف من فوق"));
+    return e;
+  }
+  function itemCard(it) {
+    var badge = h("span", { class: "badge" }), perUnit = h("small"), lowB = h("span", { class: "badge low", hidden: "" });
+    var qtyInp = h("input", { type: "text", inputmode: "numeric", autocomplete: "off", "aria-label": "الكمية" });
+    qtyInp.value = String(it.qty);
+    function setQty(n) { it.qty = Math.max(0, Math.floor(n)); qtyInp.value = String(it.qty); touch(); }
+    qtyInp.addEventListener("input", function () { it.qty = Math.floor(parseNum(qtyInp.value)); touch(); });
+    qtyInp.addEventListener("blur", function () { qtyInp.value = String(it.qty); });
+    var minus = h("button", { class: "step", type: "button", "aria-label": "نقص", text: "−" });
+    var plus = h("button", { class: "step", type: "button", "aria-label": "زيد", text: "+" });
+    minus.addEventListener("click", function () { setQty(it.qty - 1); });
+    plus.addEventListener("click", function () { setQty(it.qty + 1); });
+    var card = h("div", { class: "card item-card" },
+      field("اسم الصنف", textInput(it.name, function (s) { it.name = s; save(); }, "اسم الصنف", "اسم الصنف")),
+      h("div", { class: "row2" },
+        field("تكلفة الحبة (د)", numInput(it.cost, function (n) { it.cost = n; touch(); }, "0.00", "تكلفة الحبة")),
+        field("سعر البيع (د)", numInput(it.price, function (n) { it.price = n; touch(); }, "0.00", "سعر البيع"))),
+      h("div", { class: "field" }, h("label", { text: "الكمية" }), h("div", { class: "stepper" }, minus, qtyInp, plus)),
+      h("div", { class: "meta" }, h("span", { class: "meta" }, badge, lowB), perUnit),
+      delRow(function () { S.items = S.items.filter(function (x) { return x !== it; }); save(); render(); toast("انحذف الصنف"); })
+    );
+    live.push(function () {
+      var m = marginPct(it);
+      badge.className = "badge" + (m == null ? "" : m < 0 ? " loss" : " good");
+      badge.textContent = m == null ? "الهامش: —" : m < 0 ? "بتخسر على كل حبة" : "الهامش " + fmt(m, 1) + "%";
+      var isLow = it.qty <= S.low;
+      lowB.hidden = !isLow; lowB.textContent = it.qty === 0 ? "خلص" : "قارب يخلص";
+      perUnit.textContent = it.price > 0 ? "ربح الحبة " + money(it.price - it.cost) + " · الإجمالي " + money((it.price - it.cost) * it.qty) : "";
+    });
+    return card;
+  }
+
+  // ---------- assets / expenses
+  function renderList(v, kind, cfg) {
+    var fName = plain(cfg.namePh, cfg.namePh), fVal = plain(cfg.valuePh, cfg.valuePh, "decimal");
+    var chips = h("div", { class: "chips" });
+    cfg.presets.forEach(function (p) { chips.appendChild(h("button", { class: "chip", type: "button", text: p, onclick: function () { fName.value = p; fVal.focus(); } })); });
+    customChips(chips, kind, function (n) { fName.value = n; fVal.focus(); });
+    var form = h("form", { class: "card", novalidate: "", autocomplete: "off" },
+      h("div", { class: "row2" }, fName, fVal),
+      chips,
+      h("button", { class: "btn", type: "submit", text: "إضافة" })
+    );
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var name = fName.value.trim();
+      if (!name) { toast("اكتب الاسم"); fName.focus(); return; }
+      var o = { id: uid(), name: name.slice(0, 80) }; o[cfg.valueKey] = parseNum(fVal.value);
+      S[kind].unshift(o); save(); render(); toast("انضاف");
+    });
+    v.appendChild(form);
+
+    var tot = h("span", { class: "val" });
+    var list = h("div", { class: "card" }, h("h2", { text: cfg.title }));
+    if (!S[kind].length) list.appendChild(h("div", { class: "empty", text: cfg.empty }));
+    S[kind].forEach(function (o) {
+      list.appendChild(h("div", { class: "line", style: "display:grid;gap:8px" },
+        h("div", { class: "rowitem" },
+          textInput(o.name, function (s) { o.name = s; save(); }, cfg.namePh, "الاسم"),
+          numInput(o[cfg.valueKey], function (n) { o[cfg.valueKey] = n; touch(); }, "0.00", cfg.valuePh)),
+        delRow(function () { S[kind] = S[kind].filter(function (x) { return x !== o; }); save(); render(); toast("انحذف البند"); })
+      ));
+    });
+    list.appendChild(line(cfg.totalLabel, tot));
+    v.appendChild(list);
+    live.push(function () { tot.textContent = money(S[kind].reduce(function (a, x) { return a + x[cfg.valueKey]; }, 0)); });
+  }
+
+  // ---------- summary + calculator + backup
+  var pendingImport = null;
+  function renderSummary(v) {
+    var t = totals(), ss = salesStats(), exps = S.expenses.filter(function (x) { return x.amount > 0; }).slice().sort(function (a, b) { return b.amount - a.amount; });
+    var exTotal = exps.reduce(function (a, x) { return a + x.amount; }, 0), net = ss.month.profit - exTotal;
+    var vd = h("div", { class: "verdict neutral" }), vt = h("b"), vs = h("span");
+    if (!ss.month.rev && !exTotal) { vt.textContent = "ما في بيانات للشهر بعد"; vs.textContent = "سجّل مبيعاتك ومصاريفك وبيطلع هون إذا ربحان أو خسران."; }
+    else { vd.className = "verdict " + (net >= 0 ? "win" : "lose"); vt.textContent = (net >= 0 ? "ربحان " : "خسران ") + money(Math.abs(net)) + " هالشهر"; vs.textContent = "ربح المبيعات " + money(ss.month.profit) + " − المصاريف " + money(exTotal); }
+    vd.append(vt, vs); v.appendChild(vd);
+
+    var tot = t.capital || 1;
+    function seg(w, bg) { return h("i", { style: "width:" + (w / tot * 100) + "%;background:" + bg }); }
+    v.appendChild(h("div", { class: "card hero" }, h("span", { class: "lbl", text: "رأس المال الكلي" }), h("span", { class: "big", text: money(t.capital) }),
+      h("div", { class: "split", "aria-hidden": "true" }, seg(t.stockCost, "#fff"), seg(t.mats, "rgba(255,255,255,.55)"), seg(t.assets, "var(--earth)"), seg(S.cash, "var(--gold)")),
+      h("div", { class: "legend" }, h("span", { style: "--c:#fff", text: "مخزون " + money(t.stockCost) }), h("span", { style: "--c:rgba(255,255,255,.55)", text: "خامات " + money(t.mats) }), h("span", { style: "--c:var(--earth)", text: "أصول " + money(t.assets) }), h("span", { style: "--c:var(--gold)", text: "نقد " + money(S.cash) }))));
+
+    var pr = Math.max(ss.month.profit, 0), cm = Math.max(pr, exTotal) || 1;
+    function cmpRow(label, val, color) { return h("div", { class: "exrow" }, h("div", { class: "line" }, h("span", { text: label }), h("span", { class: "val", text: money(val) })), h("div", { class: "bar big" }, h("i", { style: "width:" + (val / cm * 100) + "%;background:" + color }))); }
+    v.appendChild(h("div", { class: "card" }, h("h2", { text: "الربح مقابل المصروف (هالشهر)" }),
+      cmpRow("ربح المبيعات", pr, "var(--good)"), cmpRow("المصاريف", exTotal, "var(--bad)"),
+      line("الفرق", h("span", { class: "val " + (net < 0 ? "bad" : "good"), text: (net < 0 ? "-" : "+") + money(Math.abs(net)) }))));
+    var days = [], DN = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+    for (var di = 6; di >= 0; di--) { var ts = Date.now() - di * 86400000; days.push({ k: dayKey(ts), n: new Date(ts + 3 * 3600000).getUTCDay(), v: 0 }); }
+    S.sales.forEach(function (x) { var k = dayKey(x.t); days.forEach(function (d) { if (d.k === k) d.v += x.price * x.qty; }); });
+    var mx = Math.max.apply(null, days.map(function (d) { return d.v; })) || 1;
+    var c7 = h("div", { class: "chart7" });
+    days.forEach(function (d) { c7.appendChild(h("div", { class: "col" }, h("small", { text: d.v ? fmt(d.v, 0) : "" }), h("i", { style: "height:" + Math.max(d.v / mx * 100, 2) + "%" }), h("small", { text: DN[d.n].slice(0, 3) }))); });
+    v.appendChild(h("div", { class: "card" }, h("h2", { text: "مبيعات آخر 7 أيام" }), c7));
+    var byItem = {};
+    S.sales.forEach(function (x) { var k = x.name || "بدون اسم"; byItem[k] = (byItem[k] || 0) + (x.price - x.cost) * x.qty; });
+    var top5 = Object.keys(byItem).map(function (k) { return { n: k, p: byItem[k] }; }).sort(function (a, b) { return b.p - a.p; }).slice(0, 5);
+    var pc = h("div", { class: "card" }, h("h2", { text: "أكثر الأصناف ربحاً" }));
+    if (!top5.length) pc.appendChild(h("div", { class: "empty", text: "سجّل مبيعات وبتظهر هون." }));
+    else { var pm = Math.max.apply(null, top5.map(function (x) { return Math.abs(x.p); })) || 1;
+      top5.forEach(function (x) { pc.appendChild(h("div", { class: "exrow" }, h("div", { class: "line" }, h("span", { text: x.n }), h("span", { class: "val " + (x.p < 0 ? "bad" : "good"), text: money(x.p) })), h("div", { class: "bar" }, h("i", { style: "width:" + Math.abs(x.p) / pm * 100 + "%;background:" + (x.p < 0 ? "var(--bad)" : "var(--brand)") })))); }); }
+    v.appendChild(pc);
+    var card = h("div", { class: "card" }, h("h2", { text: "المصاريف الشهرية" }));
+    if (!exps.length) card.appendChild(h("div", { class: "empty", text: "ضيف مصاريفك من قسم المصاريف." }));
+    else {
+      var top = exps[0], topPct = top.amount / exTotal * 100;
+      if (exps.length > 1 && topPct >= 40) card.appendChild(h("div", { class: "lowline", text: "أكبر مصروف: " + top.name + " (" + fmt(topPct, 0) + "% من المصاريف). حاول تقلله." }));
+      exps.forEach(function (x) {
+        var pct = x.amount / exTotal * 100, hi = exps.length > 1 && pct >= 40;
+        card.appendChild(h("div", { class: "exrow" },
+          h("div", { class: "line" }, h("span", { text: x.name || "بدون اسم" }), h("span", { class: "val " + (hi ? "bad" : ""), text: money(x.amount) + " · " + fmt(pct, 0) + "%" })),
+          h("div", { class: "bar" }, h("i", { style: "width:" + pct + "%;background:" + (hi ? "var(--bad)" : "var(--brand)") }))));
+      });
+      card.appendChild(line("المجموع", h("span", { class: "val", text: money(exTotal) })));
+    }
+    v.appendChild(card);
+  }
+
+  function renderAssetsExtras(v) {
+    var cashBox = h("div", { class: "cashbox" }), cashVal;
+    function drawCash(askPin) {
+      cashBox.textContent = ""; cashVal = h("span", { class: "val", text: money(S.cash) });
+      if (cashUnlocked) { cashBox.appendChild(numInput(S.cash, function (n) { S.cash = n; save(); }, "0", "النقد المتوفر")); return; }
+      if (!askPin) {
+        cashBox.appendChild(h("span", { class: "cashrow" }, cashVal, h("button", { class: "btn alt sm", type: "button", text: "تعديل", onclick: function () { drawCash(true); } })));
+        return;
+      }
+      var pin = h("input", { type: "text", inputmode: "numeric", autocomplete: "off", placeholder: "الرمز", "aria-label": "رمز التعديل" });
+      var ok = h("button", { class: "btn sm", type: "button", text: "تأكيد" });
+      ok.addEventListener("click", function () { if (pin.value.trim() === "0000") { cashUnlocked = true; drawCash(); toast("انفتح التعديل"); } else { toast("الرمز غلط"); pin.value = ""; } });
+      cashBox.appendChild(h("span", { class: "cashrow" }, pin, ok));
+    }
+    drawCash();
+    v.appendChild(h("div", { class: "card" }, h("h2", { text: "النقد" }), line("نقد متوفر", cashBox, "التعديل على النقد لعبدالله شوكة فقط (برمز)")));
+
+    var lastBk = h("p", { class: "note" }), pendBox = h("div", { class: "card", hidden: "" });
+    lastBk.textContent = S.lastBackup ? "آخر نسخة: " + new Intl.DateTimeFormat("en-GB", { timeZone: TZ, dateStyle: "medium", timeStyle: "short" }).format(S.lastBackup) : "ما صدّرت نسخة لسا.";
+    v.appendChild(h("div", { class: "card" },
+      h("h2", { text: "النسخة الاحتياطية" }),
+      h("p", { class: "sub", text: "بياناتك محفوظة على هالجهاز بس. صدّر نسخة من وقت لوقت، وخاصة قبل ما تمسح بيانات المتصفح أو تغيّر التلفون." }),
+      lastBk,
+      h("div", { class: "row2" }, h("button", { class: "btn alt", type: "button", text: "شارك الملخص", onclick: shareSummary }),
+        h("button", { class: "btn alt", type: "button", text: "تصدير Excel", onclick: exportCsv })),
+      h("div", { class: "row2" }, h("button", { class: "btn", type: "button", text: "تصدير نسخة", onclick: exportData }),
+        h("button", { class: "btn alt", type: "button", text: "استيراد نسخة", onclick: function () { $("importFile").click(); } })),
+      h("button", { class: "btn alt", type: "button", text: "فعّل تذكير الإشعارات", onclick: enableReminder }),
+      h("p", { class: "note", text: "التذكير بالخلفية بيشتغل على أندرويد بعد تثبيت التطبيق. على الآيفون بيظهر التنبيه جوا التطبيق." }),
+      pendBox
+    ));
+    if (!pendingImport) pendBox.hidden = true;
+    else {
+      pendBox.hidden = false; var p = pendingImport;
+      pendBox.append(
+        h("p", { text: "في الملف: " + p.items.length + " صنف، " + p.assets.length + " أصل، " + p.expenses.length + " مصروف. تستبدل بيانات هالجهاز فيها؟" }),
+        h("div", { class: "row2" },
+          h("button", { class: "btn danger", type: "button", text: "نعم، استبدل", onclick: function () { S = clean(p); pendingImport = null; save(); render(); toast("انسترجعت البيانات"); } }),
+          h("button", { class: "btn alt", type: "button", text: "إلغاء", onclick: function () { pendingImport = null; render(); } })
+        )
+      );
+    }
+  }
+
+  function summaryText() {
+    var t = totals(), d = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, dateStyle: "medium" }).format(Date.now());
+    var L = ["أرياف – ملخص " + d, "رأس المال: " + money(t.capital), "المخزون (تكلفة): " + money(t.stockCost), "الأصول: " + money(t.assets), "النقد: " + money(S.cash),
+      "الربح المتوقع: " + money(t.profit), "المصاريف الشهرية: " + money(t.expenses), "", "الأصناف:"];
+    S.items.forEach(function (it) { L.push("• " + it.name + " × " + it.qty); });
+    return L.join("\n");
+  }
+  function shareSummary() {
+    var txt = summaryText();
+    if (navigator.share) { navigator.share({ text: txt }).catch(function () {}); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(txt).then(function () { toast("اننسخ الملخص"); }, function () { toast("ما قدرت أنسخ"); }); return; }
+    toast("المتصفح ما بدعم المشاركة");
+  }
+  function exportCsv() {
+    var q = function (x) { return '"' + String(x).replace(/"/g, '""') + '"'; };
+    var rows = [["الصنف", "التكلفة", "سعر البيع", "الكمية", "الهامش %"].map(q).join(",")];
+    S.items.forEach(function (it) { var m = marginPct(it); rows.push([q(it.name), it.cost, it.price, it.qty, m == null ? "" : m.toFixed(1)].join(",")); });
+    var blob = new Blob(["\ufeff" + rows.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = "aryaf-stock.csv"; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000); toast("نزّلت ملف Excel");
+  }
+
+  function exportData() {
+    S.lastBackup = Date.now(); save(); syncMeta();
+    var d = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(Date.now());
+    var name = "aryaf-backup-" + d + ".json";
+    var payload = JSON.stringify({ app: "aryaf-inventory", version: 1, exportedAt: new Date().toISOString(), data: S }, null, 2);
+    var blob = new Blob([payload], { type: "application/json" });
+    function download() {
+      var url = URL.createObjectURL(blob), a = document.createElement("a");
+      a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      toast("نزّلت النسخة");
+    }
+    try {
+      var file = new File([blob], name, { type: "application/json" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: "نسخة أرياف" }).then(function () { toast("انحفظت النسخة"); }, function (e) { if (!e || e.name !== "AbortError") download(); });
+        touch(); return;
+      }
+    } catch (e) {}
+    download(); touch();
+  }
+
+  $("importFile").addEventListener("change", function (ev) {
+    var f = ev.target.files && ev.target.files[0]; ev.target.value = "";
+    if (!f) return;
+    if (f.size > 5 * 1024 * 1024) return toast("الملف كبير كثير");
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var j = JSON.parse(String(r.result));
+        var d = j && j.data ? j.data : j;
+        if (!d || (!Array.isArray(d.items) && !Array.isArray(d.assets) && !Array.isArray(d.expenses))) throw new Error("shape");
+        pendingImport = clean(d); tab = "assets"; render();
+        window.scrollTo(0, document.body.scrollHeight);
+      } catch (e) { toast("هالملف مش نسخة أرياف صحيحة"); }
+    };
+    r.onerror = function () { toast("ما قدرت أقرا الملف"); };
+    r.readAsText(f);
+  });
+
+  // ---------- start
+  render();
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  syncMeta();
+  if ("serviceWorker" in navigator) {
+    var hadCtl = !!navigator.serviceWorker.controller, reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", function () { if (hadCtl && !reloaded) { reloaded = true; location.reload(); } });
+    window.addEventListener("load", function () { navigator.serviceWorker.register("service-worker.js").catch(function () {}); });
+  }
+})();
+</script>
+</body>
+</html>
